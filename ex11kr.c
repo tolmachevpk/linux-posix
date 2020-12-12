@@ -35,14 +35,16 @@ int main(int ac, char* av[]) {
         pid = fork();
         if (pid == 0) {
             int j = 0;
+            close(mypipefd[0]);
             long long unsigned sum_fork = 0;
             for (j = count_of_elem * i; j < (i == processes - 1) ? length : (count_of_elem * (i + 1)); j++) {
                 sum_fork += arr[j];
             }
-            write(mypipefd[1], &sum_fork, SIZE);
+            int return_write = 0;
+            return_write = write(mypipefd[1], &sum_fork, SIZE);
+            printf("write для fork #%d возвращает %d\n", i, return_write);
             //char ch = '\n';
             //write(mypipefd[1], &ch, 1);
-            close(mypipefd[0]);
             close(mypipefd[1]);
             return 0;
         }
@@ -52,10 +54,11 @@ int main(int ac, char* av[]) {
     }
     long long unsigned sum_of_part = 0;
     close(mypipefd[1]);
-    while (read(mypipefd[0], &sum_of_part, SIZE) > 0) {
-        printf("%s", sum_of_part);
-        sum += atoi(sum_of_part);
+    while ( (i = read(mypipefd[0], &sum_of_part, SIZE)) > 0) {
+        printf("%llu", sum_of_part);
+        sum += sum_of_part;
     }
+    printf("read возвращает %d\n", i);
     close(mypipefd[0]);
     printf("С помощью fork() и pipe() sum = %llu\n", sum);
 
