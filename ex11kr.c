@@ -34,12 +34,20 @@ int main(int ac, char* av[]) {
     for (i = 0; i < processes; i++) {
         pid = fork();
         if (pid == 0) {
+
             int j = 0;
             close(mypipefd[0]);
             long long unsigned sum_fork = 0;
-            for (j = count_of_elem * i; j < (i == processes - 1) ? length : (count_of_elem * (i + 1)); j++) {
+            int hightest_val = 0;
+            if (i == processes - 1) {
+                hightest_val = length;
+            } else {
+                hightest_val = count_of_elem * (i + 1);
+            }
+            for (j = (count_of_elem * i); j < hightest_val; j++) {
                 sum_fork += arr[j];
             }
+            printf("тут еще все работает %d\n", i);
             int return_write = 0;
             return_write = write(mypipefd[1], &sum_fork, SIZE);
             printf("write для fork #%d возвращает %d\n", i, return_write);
@@ -62,31 +70,4 @@ int main(int ac, char* av[]) {
     close(mypipefd[0]);
     printf("С помощью fork() и pipe() sum = %llu\n", sum);
 
-    /*
-     * for (i = 0; i < length; i++) {
-        if (i != length - 1) {
-            pid = fork();
-        }
-        if (pid != 0) {
-            wait(NULL);
-            read(mypipefd[0], &sum, SIZE);
-            sum += arr[i];
-            write(mypipefd[1], &sum, SIZE);
-            close(mypipefd[0]);
-            close(mypipefd[1]);
-            if (i == 0) {
-                printf("С помощью fork() и pipe() sum = %llu\n", sum);
-            }
-            break;
-        } else {
-            if (i == length - 1) {
-                sum = arr[i];
-                write(mypipefd[1], &sum, SIZE);
-                close(mypipefd[0]);
-                close(mypipefd[1]);
-                break;
-            }
-        }
-    }
-     */
 }
