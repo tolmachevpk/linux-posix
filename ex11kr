@@ -16,28 +16,42 @@ int main(int ac, char* av[]) {
     int arr[length];
     int i = 0;
     srand(time(0));
+    unsigned long long sum = 0;
     for (i = 0; i < length; i++) {
         arr[i] = (rand() % 20);
+        sum += arr[i];
     }
+    printf("sum = %ull\n", sum);
     int mypipefd[2];
     int checkpipe = pipe(mypipefd);
     if (checkpipe != 0) {
         perror("problems with pipe");
     }
-    unsigned long long sum = 0;
-    int pid = fork();
+    sum = 0;
+    int pid;
     for (i = 0; i < length; i++) {
         if (i != length - 1) {
             pid = fork();
-            wait(NULL);
         }
-        if (pid == 0) {
-            if (i != length - 1) {
-                read(mypipefd[0], &sum, SIZE);
-            }
+        if (pid != 0) {
+            wait(NULL);
+            read(mypipefd[0], &sum, SIZE);
             sum += arr[i];
             write(mypipefd[1], &sum, SIZE);
-            return 0;
+            close(mypipefd[0]);
+            close(mypipefd[1]);
+            if (i == 0) {
+                printf("С помощью fork() sum = %llu\n", sum);
+            }
+            break;
+        } else {
+            if (i == length - 1) {
+                sum = arr[i];
+                write(mypipefd[1], &sum, SIZE);
+                close(mypipefd[0]);
+                close(mypipefd[1]);
+                break;
+            }
         }
     }
 
