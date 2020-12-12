@@ -21,7 +21,7 @@ int main(int ac, char* av[]) {
         arr[i] = (rand() % 20);
         sum += arr[i];
     }
-    printf("sum = %ull\n", sum);
+    printf("С помощью цикла for получилось sum = %llu\n", sum);
     int mypipefd[2];
     int checkpipe = pipe(mypipefd);
     if (checkpipe != 0) {
@@ -41,7 +41,7 @@ int main(int ac, char* av[]) {
             close(mypipefd[0]);
             close(mypipefd[1]);
             if (i == 0) {
-                printf("С помощью fork() sum = %llu\n", sum);
+                printf("С помощью fork() и pipe() sum = %llu\n", sum);
             }
             break;
         } else {
@@ -54,5 +54,4 @@ int main(int ac, char* av[]) {
             }
         }
     }
-
 }
