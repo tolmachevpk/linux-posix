@@ -1,4 +1,3 @@
-#include "pair.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -7,8 +6,11 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <sys/types.h>
+#include <string.h>
 
 #define MAX_URL 2500
+#define START_MAX_TEXT 2000
+#define VAL_FOR_INC 1500
 
 void download_file(char *url, char *path) {
     int pid = fork();
@@ -21,22 +23,22 @@ void download_file(char *url, char *path) {
     wait(NULL);
 }
 
-void words_increase_size_text(char ** text) {
+void increase_size_text(char ** text) {
     int len_text = strlen(*text);
-    (*text) = (char *) realloc((*text), len_text + 1500);
+    (*text) = (char *) realloc((*text), len_text + VAL_FOR_INC);
 }
 
 void read_file(int fd1, char **text) {
-    int i = read(fd1, *text, 1500);
+    int i = read(fd1, *text, VAL_FOR_INC);
     if (i == -1) {
         perror("Can't read file");
     }
-    int k = 1500;
+    int k = VAL_FOR_INC;
     while (i > 0) {
-        i = read(fd1, *text + k, 1500);
+        i = read(fd1, *text + k, VAL_FOR_INC);
         if (i > 0) {
-            k += 1500;
-            words_increase_size_text(text);
+            k += VAL_FOR_INC;
+            increase_size_text(text);
         }
     }
     int cls1 = close(fd1);
@@ -66,10 +68,12 @@ char *name_of_file(char *url) {
         }
         res[i - 1] = arr[i];
     }
+
+    free(arr);
     return res;
 }
 
-void read_url(char* url, char **text) {
+void read_file_from_url(char* url, char **text) {
     char buf[PATH_MAX];
     getcwd(buf, PATH_MAX);
 
@@ -102,7 +106,40 @@ int is_url(char *url) {
     return 0;
 }
 
+int size_of_argv(int ac, char *av[]) {
+    int i = 0;
+    int sum = 0;
+    for (i = 1; i < ac; i++) {
+        sum += strlen(av[i]);
+    }
+    return sum;
+}
+
+void increase_text_for_argv(char **text, int count) {
+    int size_of_text = START_MAX_TEXT;
+    while(size_of_text <= count) {
+        increase_size_text(text);
+        size_of_text += VAL_FOR_INC;
+    }
+}
+
+void read_argv(int ac, char *av[], char **text) {
+    int i = 0;
+    int chars_in_argv = size_of_argv(ac, av);
+    increase_text_for_argv(text, chars_in_argv);
+
+    strcat((*text), av[1]);
+    for(i = 2; i < ac; i++) {
+        strcat((*text), " ");
+        strcat((*text), av[i]);
+    }
+}
+
 void text_reader(int ac, char *av[], char **text) {
+    if (ac == 1) {
+        printf("Ошибка ввода.\n");
+        exit(0);
+    }
     if (ac == 2) {
         // Попробуем прочитать файл, если это он, тогда все получится
         int fd1 = open(av[1], O_RDONLY);
@@ -113,7 +150,11 @@ void text_reader(int ac, char *av[], char **text) {
         // Здесь проверка того, что это url, нормальных способов на С не нашел,
         // поэтому буду просто искать .ru, .ru/, .com, .com/, .org, .org/
         if (is_url(av[1]) == 1) {
-            read_url(av[1], text);
+            read_file_from_url(av[1], text);
+        } else {
+            read_argv(ac, av, text);
         }
+    } else {
+        read_argv(ac, av, text);
     }
 }
